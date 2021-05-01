@@ -2,13 +2,24 @@
 
 #include <algorithm>
 
+#define THREADS_NUM 16
+
+ThreadLineParams::ThreadLineParams(int threadNum,
+                                   int fromPos,
+                                   int toPos,
+                                   NeedlemanWunsch *ref)
+        : threadNum(threadNum),
+          fromPos(fromPos),
+          toPos(toPos),
+          ref(ref) {}
+
 NeedlemanWunschPar::NeedlemanWunschPar(std::string dnaA,
                                        std::string dnaB)
         : NeedlemanWunsch(std::move(dnaA), std::move(dnaB)) {
     sems = std::vector<std::vector<sem_t *>>(scoreMatrixLinesNum - 1,
-                                             std::vector<sem_t *>(4));
+                                             std::vector<sem_t *>(THREADS_NUM));
     for (int i = 0; i < scoreMatrixLinesNum - 1; ++i) {
-        for (int j = 0; j < 4; ++j) {
+        for (int j = 0; j < THREADS_NUM; ++j) {
             sems[i][j] = new sem_t;
             sem_init(sems[i][j], 0, 0);
         }
@@ -41,7 +52,7 @@ void NeedlemanWunschPar::populateScoreMatrixLineFromTo(ThreadLineParams *params)
             ssi, ssj;
     char bi, aj;
 
-    for (int i = params->lineNum; i < scoreMatrixLinesNum; ++i) {
+    for (int i = 1; i < scoreMatrixLinesNum; ++i) {
         sem_wait(sems[i - 1][params->threadNum]);
 
         bi = (char) dnaB[i - 1];
@@ -62,7 +73,7 @@ void NeedlemanWunschPar::populateScoreMatrixLineFromTo(ThreadLineParams *params)
 
         sem_post(sems[i - 1][params->threadNum]);
 
-        if (params->threadNum != 3) {
+        if (params->threadNum != THREADS_NUM - 1) {
             sem_post(sems[i - 1][params->threadNum + 1]);
         }
 
@@ -74,41 +85,29 @@ void NeedlemanWunschPar::populateScoreMatrixLineFromTo(ThreadLineParams *params)
 
 void populateScoreMatrixT(NeedlemanWunschPar *ref,
                           std::vector<std::vector<int>> &scoreMatrix) {
-    int columnsNum = scoreMatrix[0].size() - 1;
-    bool columnSumEven = columnsNum % 2 == 0;
-    int quarterLinePos = columnsNum / 4;
+    int columnsNum = (int) scoreMatrix[0].size() - 1;
+    bool columnNumEven = columnsNum % 2 == 0;
+    int divisionLinePos = columnsNum / THREADS_NUM;
+    pthread_t threads[THREADS_NUM];
+    ThreadLineParams *params[THREADS_NUM];
 
-    pthread_t thread0, thread1, thread2, thread3;
-    auto params0 = ThreadLineParams(0, 1, 1,
-                                    quarterLinePos - (columnSumEven ? 0 : 1), ref);
-    auto params1 = ThreadLineParams(1, 1, quarterLinePos + (columnSumEven ? 1 : 0),
-                                    quarterLinePos * 2 - (columnSumEven ? 0 : 1), ref);
-    auto params2 = ThreadLineParams(2, 1, quarterLinePos * 2 + (columnSumEven ? 1 : 0),
-                                    quarterLinePos * 3 - (columnSumEven ? 0 : 1), ref);
-    auto params3 = ThreadLineParams(3, 1, quarterLinePos * 3 + (columnSumEven ? 1 : 0),
-                                    quarterLinePos * 4, ref);
+    for (int i = 0,
+                 fromPos = 1,
+                 toPos = divisionLinePos - (columnNumEven ? 0 : 1);
+         i < THREADS_NUM; ++i) {
+        params[i] = new ThreadLineParams(i, fromPos, toPos, ref);
+        pthread_create(&threads[i],
+                       nullptr,
+                       populateScoreMatrixLineFromTo,
+                       (void *) params[i]);
 
-    pthread_create(&thread0,
-                   nullptr,
-                   populateScoreMatrixLineFromTo,
-                   (void *) &params0);
-    pthread_create(&thread1,
-                   nullptr,
-                   populateScoreMatrixLineFromTo,
-                   (void *) &params1);
-    pthread_create(&thread2,
-                   nullptr,
-                   populateScoreMatrixLineFromTo,
-                   (void *) &params2);
-    pthread_create(&thread3,
-                   nullptr,
-                   populateScoreMatrixLineFromTo,
-                   (void *) &params3);
+        fromPos = (divisionLinePos * (i + 1)) + (columnNumEven ? 1 : 0);
+        toPos = divisionLinePos * (i + 2) - (columnNumEven ? 0 : 1);
+    }
 
-    pthread_join(thread0, nullptr);
-    pthread_join(thread1, nullptr);
-    pthread_join(thread2, nullptr);
-    pthread_join(thread3, nullptr);
+    for (int i = 0; i < THREADS_NUM; ++i) {
+        pthread_join(threads[i], nullptr);
+    }
 
 //    printMatrix(scoreMatrix);
 }

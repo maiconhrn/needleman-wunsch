@@ -48,17 +48,12 @@ public:
 };
 
 typedef struct ThreadLineParams {
-    int threadNum, lineNum, fromPos, toPos;
+    int threadNum, fromPos, toPos;
 
     NeedlemanWunsch *ref;
 
-    ThreadLineParams(int threadNum, int lineNum, int fromPos,
-                     int toPos, NeedlemanWunsch *ref)
-            : threadNum(threadNum),
-              lineNum(lineNum),
-              fromPos(fromPos),
-              toPos(toPos),
-              ref(ref) {}
+    ThreadLineParams(int threadNum, int fromPos,
+                     int toPos, NeedlemanWunsch *ref);
 } ThreadLineParams;
 
 class NeedlemanWunschPar : public NeedlemanWunsch {

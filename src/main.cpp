@@ -3,11 +3,10 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <unistd.h>
+#include <chrono>
 
 #include "nw/needleman-wunsch.hpp"
-
-#include <unistd.h>
-#include <ctime>
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -52,10 +51,22 @@ void process_mem_usage(double &vm_usage, double &resident_set) {
     resident_set = rss * page_size_kb;
 }
 
-int main(int argc, char *argv[]) {
-    clock_t begin, end;
+void execNWAlgorithm(NeedlemanWunsch *nw) {
     double vm, rss;
 
+    auto start = std::chrono::steady_clock::now();
+    nw->calculate_score_matrix();
+    std::cout << "Result: " << nw->getResult() << std::endl;
+    auto end = std::chrono::steady_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "Time: " << elapsed_seconds.count() << "s" << std::endl;
+
+    process_mem_usage(vm, rss);
+    std::cout << "VM: " << vm << "KB" << std::endl << "RSS: " << rss << "KB" << std::endl;
+}
+
+int main(int argc, char *argv[]) {
     std::vector<std::string> args(argv, argv + argc);
 
     std::ifstream dnaA(args[1]), dnaB(args[2]);
@@ -78,33 +89,10 @@ int main(int argc, char *argv[]) {
     }
 
     auto inParallel = std::find(args.begin(), args.end(), "-p") != args.end();
-
     if (!inParallel) {
-        // Application of algorithm. // Sequential
-        begin = clock();
-
-        auto *nwseq = new NeedlemanWunschSeq(sdnaA, sdnaB);
-        nwseq->calculate_score_matrix();
-        std::cout << "Sequential: " << nwseq->getResult() << std::endl;
-
-        end = clock();
-
-        std::cout << "Time: " << double(end - begin) / CLOCKS_PER_SEC << "s" << std::endl;
-        process_mem_usage(vm, rss);
-        std::cout << "VM: " << vm << "KB" << std::endl << "RSS: " << rss << "KB" << std::endl;
+        execNWAlgorithm(new NeedlemanWunschSeq(sdnaA, sdnaB));
     } else {
-        // Application of algorithm. // Parallel
-        begin = clock();
-
-        auto *nwpar = new NeedlemanWunschPar(sdnaA, sdnaB);
-        nwpar->calculate_score_matrix();
-        std::cout << "Parallel: " << nwpar->getResult() << std::endl;
-
-        end = clock();
-
-        std::cout << "Time: " << double(end - begin) / CLOCKS_PER_SEC << "s" << std::endl;
-        process_mem_usage(vm, rss);
-        std::cout << "VM: " << vm << "KB" << std::endl << "RSS: " << rss << "KB" << std::endl;
+        execNWAlgorithm(new NeedlemanWunschPar(sdnaA, sdnaB));
     }
 
     exit(EXIT_SUCCESS);
