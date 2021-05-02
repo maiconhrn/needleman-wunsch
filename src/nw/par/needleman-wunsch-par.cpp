@@ -93,7 +93,7 @@ void populateScoreMatrixT(NeedlemanWunschPar *ref,
 
     for (int i = 0,
                  fromPos = 1,
-                 toPos = divisionLinePos - (columnNumEven ? 0 : 1);
+                 toPos = divisionLinePos;
          i < THREADS_NUM; ++i) {
         params[i] = new ThreadLineParams(i, fromPos, toPos, ref);
         pthread_create(&threads[i],
@@ -101,8 +101,10 @@ void populateScoreMatrixT(NeedlemanWunschPar *ref,
                        populateScoreMatrixLineFromTo,
                        (void *) params[i]);
 
-        fromPos = (divisionLinePos * (i + 1)) + (columnNumEven ? 1 : 0);
-        toPos = divisionLinePos * (i + 2) - (columnNumEven ? 0 : 1);
+        fromPos = (divisionLinePos * (i + 1)) + 1;
+        toPos = divisionLinePos * (i + 2) + (!columnNumEven && i == THREADS_NUM - 2
+                                             ? columnsNum % THREADS_NUM
+                                             : 0);
     }
 
     for (int i = 0; i < THREADS_NUM; ++i) {
