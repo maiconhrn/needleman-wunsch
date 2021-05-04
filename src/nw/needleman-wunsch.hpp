@@ -1,3 +1,6 @@
+#ifndef NEEDLEMAN_WUNSCH_H
+#define NEEDLEMAN_WUNSCH_H
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -69,3 +72,5 @@ public:
 
     void calculate_score_matrix() override;
 };
+
+#endif //NEEDLEMAN_WUNSCH_H

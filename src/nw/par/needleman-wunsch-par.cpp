@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#define THREADS_NUM 16
+#define THREADS_NUM 8
 
 ThreadLineParams::ThreadLineParams(int threadNum,
                                    int fromPos,
