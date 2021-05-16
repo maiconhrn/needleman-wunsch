@@ -1,0 +1,40 @@
+Sequential
+Result: 2242
+Time: 6.33619s
+VM: 1.56968e+06KB
+RSS: 1.56669e+06KB
+
+=============================
+
+Sequential
+Result: 2242
+Time: 6.42857s
+VM: 1.56968e+06KB
+RSS: 1.56666e+06KB
+
+=============================
+
+Sequential
+Result: 2242
+Time: 6.28393s
+VM: 1.56968e+06KB
+RSS: 1.56667e+06KB
+
+=============================
+
+Sequential
+Result: 2242
+Time: 6.2525s
+VM: 1.56968e+06KB
+RSS: 1.56669e+06KB
+
+=============================
+
+Sequential
+Result: 2242
+Time: 6.24927s
+VM: 1.56968e+06KB
+RSS: 1.56672e+06KB
+
+=============================
+

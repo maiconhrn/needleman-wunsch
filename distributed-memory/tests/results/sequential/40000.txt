@@ -1,0 +1,40 @@
+Sequential
+Result: 4443
+Time: 24.9536s
+VM: 6.40745e+06KB
+RSS: 6.40292e+06KB
+
+=============================
+
+Sequential
+Result: 4443
+Time: 25.1151s
+VM: 6.40745e+06KB
+RSS: 6.40435e+06KB
+
+=============================
+
+Sequential
+Result: 4443
+Time: 25.5214s
+VM: 6.40745e+06KB
+RSS: 6.40443e+06KB
+
+=============================
+
+Sequential
+Result: 4443
+Time: 24.9949s
+VM: 6.40745e+06KB
+RSS: 6.4044e+06KB
+
+=============================
+
+Sequential
+Result: 4443
+Time: 25.0737s
+VM: 6.40745e+06KB
+RSS: 6.40439e+06KB
+
+=============================
+

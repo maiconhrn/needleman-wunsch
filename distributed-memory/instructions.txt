@@ -1,0 +1,33 @@
+Pré-requisitos:
+- Sistema operacional Linux
+- g++ 9.3.0>=
+- QT 5>= (qmake)
+- make
+
+OBS: Os arquivos gerados na fase de compilação serão colocados no diretório "{{projectRootDir}}/build/".
+
+OBS: Para alterar a quantidade de Threads que o programa irá usar é preciso alterar uma constante no código:
+    Alterar a constante: THREADS_NUM no arquivo {{projectRootDir}}/src/nw/par/needleman-wunsch-par.cpp.
+        O valor padrão dela é 8.
+        Foi testado somente com valores múltiplos de 2 e maiores que 1 (2, 4, 16, 32, ...).
+
+OBS: Foi utilizado um framework para o controle do build do projeto chamado QT.
+    Para instalar no Ubuntu é possível utilizar os pacotes que vem por default no repositório oficial do sistema via apt (Provavelmente outros sistemas Linux também possuem esse pacote no seu repositório oficial):
+    $ sudo apt-get install qt5-default
+        Verificar o guideline no site oficial: https://wiki.qt.io/Install_Qt_5_on_Ubuntu
+
+1 - Para compilar execute:
+    - Gera o {{projectRootDir}}/Makefile:
+        $ qmake needleman-wunsch.pro
+    - Compila o projeto para gerar o executável {{projectRootDir}}/build/nw:
+        $ make
+
+2 - Para executar execute:
+    $ ./build/nw {{caminho para o arquivo com texto dnaA}} {{caminho para o arquivo com texto dnaB}} {{: modo sequencial | -p: modo paralelo}}
+
+    Exemplos:
+    - Em modo sequencial:
+        $ ./build/nw tests/10000_seq1.txt tests/10000_seq2.txt
+
+    - Em modo paralelo:
+        $ ./build/nw tests/10000_seq1.txt tests/10000_seq2.txt -p

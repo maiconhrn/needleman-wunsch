@@ -1,0 +1,40 @@
+Sequential
+Result: 1115
+Time: 1.58496s
+VM: 397208KB
+RSS: 394236KB
+
+=============================
+
+Sequential
+Result: 1115
+Time: 1.6183s
+VM: 397208KB
+RSS: 394228KB
+
+=============================
+
+Sequential
+Result: 1115
+Time: 1.5623s
+VM: 397208KB
+RSS: 394208KB
+
+=============================
+
+Sequential
+Result: 1115
+Time: 1.64041s
+VM: 397208KB
+RSS: 394112KB
+
+=============================
+
+Sequential
+Result: 1115
+Time: 1.58977s
+VM: 397208KB
+RSS: 394236KB
+
+=============================
+
