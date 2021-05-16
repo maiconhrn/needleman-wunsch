@@ -11,64 +11,6 @@
 
 #define TAG 1
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// process_mem_usage(double &, double &) - takes two doubles by reference,
-// attempts to read the system-dependent data for a process' virtual memory
-// size and resident set size, and return the results in KB.
-//
-// On failure, returns 0.0, 0.0
-void process_mem_usage(double &vm_usage, double &resident_set) {
-    using std::ios_base;
-    using std::ifstream;
-    using std::string;
-
-    vm_usage = 0.0;
-    resident_set = 0.0;
-
-    // 'file' stat seems to give the most reliable results
-    //
-    ifstream stat_stream("/proc/self/stat", ios_base::in);
-
-    // dummy vars for leading entries in stat that we don't care about
-    //
-    string pid, comm, state, ppid, pgrp, session, tty_nr;
-    string tpgid, flags, minflt, cminflt, majflt, cmajflt;
-    string utime, stime, cutime, cstime, priority, nice;
-    string O, itrealvalue, starttime;
-
-    // the two fields we want
-    //
-    unsigned long vsize;
-    long rss;
-
-    stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
-                >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
-                >> utime >> stime >> cutime >> cstime >> priority >> nice
-                >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
-
-    stat_stream.close();
-
-    long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
-    vm_usage = vsize / 1024.0;
-    resident_set = rss * page_size_kb;
-}
-
-void execNWAlgorithm(NeedlemanWunsch *nw) {
-    double vm, rss;
-
-    auto start = std::chrono::steady_clock::now();
-    nw->calculate_score_matrix();
-    std::cout << "Result: " << nw->getResult() << std::endl;
-    auto end = std::chrono::steady_clock::now();
-
-    std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "Time: " << elapsed_seconds.count() << "s" << std::endl;
-
-    process_mem_usage(vm, rss);
-    std::cout << "VM: " << vm << "KB" << std::endl << "RSS: " << rss << "KB" << std::endl;
-}
-
 void printMatrix(const std::vector<std::vector<int>> &m) {
     for (int i = 0; i < m.size(); ++i) {
         std::cout << "[";
@@ -129,7 +71,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> args(argv, argv + argc);
 
     if (id == 0) {
-        std::cout << "id: " << id << " processing files" << std::endl;
+//        std::cout << "id: " << id << " processing files" << std::endl;
 
         std::ifstream dnaA(args[1]), dnaB(args[2]);
         std::string sdnaA, sdnaB;
@@ -153,9 +95,11 @@ int main(int argc, char *argv[]) {
 //        std::cout << id << " dnaA: " << sdnaA.c_str() << std::endl;
 //        std::cout << id << " dnaB: " << sdnaB.c_str() << std::endl;
 
-        for (int i = 0; i < size; ++i) {
+        for (int i = 1; i < size; ++i) {
+//            std::cout << "OPA01" << std::endl;
             MPI_Send(sdnaA.c_str(), sdnaA.size(), MPI_CHAR, i, TAG, MPI_COMM_WORLD);
             MPI_Send(sdnaB.c_str(), sdnaB.size(), MPI_CHAR, i, TAG, MPI_COMM_WORLD);
+//            std::cout << "OPA02" << std::endl;
         }
 
         auto nw = new NeedlemanWunschSeq(sdnaA, sdnaB);
@@ -172,16 +116,23 @@ int main(int argc, char *argv[]) {
         MPI_Send(&fromPos, 1, MPI_INT, 1, TAG, MPI_COMM_WORLD);
         MPI_Send(&toPos, 1, MPI_INT, 1, TAG, MPI_COMM_WORLD);
 
-        std::cout << id << " fromPos: " << fromPos << std::endl;
-        std::cout << id << " toPos: " << toPos << std::endl;
+//        std::cout << id << " fromPos: " << fromPos << std::endl;
+//        std::cout << id << " toPos: " << toPos << std::endl;
 
         for (int j = 0; j < scoreMatrix.size(); ++j) {
             MPI_Send(&scoreMatrix[j].front(), scoreMatrix[j].size(),
                      MPI_INT, 1, TAG, MPI_COMM_WORLD);
-            std::cout << "OPA0" << std::endl;
         }
+
+        for (int i = 0; i < scoreMatrix.size(); ++i) {
+            MPI_Probe(processesNum, TAG, MPI_COMM_WORLD, &st);
+            MPI_Get_count(&st, MPI_INT, &count);
+            MPI_Recv(&scoreMatrix[i].front(), count, MPI_INT, processesNum, TAG, MPI_COMM_WORLD, &st);
+        }
+
+        std::cout << scoreMatrix[scoreMatrix.size() - 1][scoreMatrix[0].size() - 1] << std::endl;
     } else {
-        std::cout << "id: " << id << " receiving in strs" << std::endl;
+//        std::cout << "id: " << id << " receiving in strs" << std::endl;
 
         char cdnaA[100000], cdnaB[100000];
 
@@ -203,8 +154,8 @@ int main(int argc, char *argv[]) {
         int fromPos, toPos;
         MPI_Recv(&fromPos, 1, MPI_INT, source, TAG, MPI_COMM_WORLD, &st);
         MPI_Recv(&toPos, 1, MPI_INT, source, TAG, MPI_COMM_WORLD, &st);
-        std::cout << id << " fromPos: " << fromPos << std::endl;
-        std::cout << id << " toPos: " << toPos << std::endl;
+//        std::cout << id << " fromPos: " << fromPos << std::endl;
+//        std::cout << id << " toPos: " << toPos << std::endl;
 
         std::string sdnaA(cdnaA), sdnaB(cdnaB);
         auto scoreMatrix = std::vector<std::vector<int>>(sdnaB.length() + 1,
@@ -216,37 +167,35 @@ int main(int argc, char *argv[]) {
             MPI_Recv(&scoreMatrix[i].front(), count, MPI_INT, source, TAG, MPI_COMM_WORLD, &st);
         }
 
-        std::cout << id << " OPA1" << std::endl;
-
-//        printMatrix(scoreMatrix);
-
         populateScoreMatrixLinesFromTo(scoreMatrix, scoreMatrix.size(),
                                        sdnaA, sdnaB, fromPos, toPos);
-        printMatrix(scoreMatrix);
 
         int processesNum = size - 1;
-        std::cout << id << " processes num " << processesNum << std::endl;
+//        std::cout << id << " processes num " << processesNum << std::endl;
         int columnsNum = (int) scoreMatrix[0].size() - 1;
         bool columnNumEven = columnsNum % 2 == 0;
         bool processesNumEven = processesNum % 2 == 0;
         int divisionLinePos = columnsNum / processesNum;
 
         if (id < processesNum) {
-            std::cout << id << " OPA2 " << size << std::endl;
-
             fromPos = (divisionLinePos * id) + 1;
             toPos = (divisionLinePos * (id + 1)) + (((id == processesNum - 1)
                                                      && (!columnNumEven || !processesNumEven))
                                                     ? columnsNum % processesNum
                                                     : 0);
-            std::cout << id << " next fromPos: " << fromPos << std::endl;
-            std::cout << id << " next toPos: " << toPos << std::endl;
+//            std::cout << id << " next fromPos: " << fromPos << std::endl;
+//            std::cout << id << " next toPos: " << toPos << std::endl;
             MPI_Send(&fromPos, 1, MPI_INT, dest, TAG, MPI_COMM_WORLD);
             MPI_Send(&toPos, 1, MPI_INT, dest, TAG, MPI_COMM_WORLD);
 
             for (int j = 0; j < scoreMatrix.size(); ++j) {
                 MPI_Send(&scoreMatrix[j].front(), scoreMatrix[j].size(),
                          MPI_INT, dest, TAG, MPI_COMM_WORLD);
+            }
+        } else {
+            for (int j = 0; j < scoreMatrix.size(); ++j) {
+                MPI_Send(&scoreMatrix[j].front(), scoreMatrix[j].size(),
+                         MPI_INT, 0, TAG, MPI_COMM_WORLD);
             }
         }
     }
