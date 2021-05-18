@@ -1,15 +1,12 @@
 Pré-requisitos:
 - Sistema operacional Linux
-- g++ 9.3.0>=
+- OpenMPI>=4
 - QT 5>= (qmake)
 - make
 
 OBS: Os arquivos gerados na fase de compilação serão colocados no diretório "{{projectRootDir}}/build/".
 
-OBS: Para alterar a quantidade de Threads que o programa irá usar é preciso alterar uma constante no código:
-    Alterar a constante: THREADS_NUM no arquivo {{projectRootDir}}/src/nw/par/needleman-wunsch-par.cpp.
-        O valor padrão dela é 8.
-        Foi testado somente com valores múltiplos de 2 e maiores que 1 (2, 4, 16, 32, ...).
+OBS: Para alterar a quantidade de Processos que o programa irá usar é preciso passar um paramentro -np no momento da execução via mpirun
 
 OBS: Foi utilizado um framework para o controle do build do projeto chamado QT.
     Para instalar no Ubuntu é possível utilizar os pacotes que vem por default no repositório oficial do sistema via apt (Provavelmente outros sistemas Linux também possuem esse pacote no seu repositório oficial):
@@ -22,12 +19,14 @@ OBS: Foi utilizado um framework para o controle do build do projeto chamado QT.
     - Compila o projeto para gerar o executável {{projectRootDir}}/build/nw:
         $ make
 
+OBS: é o make utiliza o link mpicxx para compilar o programa, então é necessário te-lo na máquina.
+
 2 - Para executar execute:
-    $ ./build/nw {{caminho para o arquivo com texto dnaA}} {{caminho para o arquivo com texto dnaB}} {{: modo sequencial | -p: modo paralelo}}
+    $ mpirun -np {{número de processos}} ./build/nw {{caminho para o arquivo com texto dnaA}} {{caminho para o arquivo com texto dnaB}}
 
     Exemplos:
-    - Em modo sequencial:
-        $ ./build/nw tests/10000_seq1.txt tests/10000_seq2.txt
+    - Em mode de memória distribuida:
+        $ mpirun -np 4 ./build/nw tests/10000_seq1.txt tests/10000_seq2.txt
 
-    - Em modo paralelo:
-        $ ./build/nw tests/10000_seq1.txt tests/10000_seq2.txt -p
+    - Em modo sequencial:
+        OBS: por favor, utilizar a versão sequencial da entrega do primeiro trabalho, pois é a mesma implementação sequencial.
